@@ -14,6 +14,51 @@ from dataclasses import dataclass, asdict
 from abc import ABC, abstractmethod
 import sys
 
+# ---------------------- 大厂名单（500+ 人公司） ----------------------
+
+KNOWN_LARGE_COMPANIES = {
+    # 互联网/科技
+    "字节跳动", "腾讯", "阿里巴巴", "百度", "美团", "京东", "拼多多", "网易", "快手", "哔哩哔哩",
+    "滴滴", "小米", "华为", "OPPO", "vivo", "中兴", "联想", "海尔", "美的", "格力",
+    "京东科技", "蚂蚁集团", "阿里云", "腾讯云", "字节云",
+    "商汤科技", "旷视科技", "依图科技", "云从科技",
+    "大疆", "海康威视", "科大讯飞", "寒武纪", "地平线", "Momenta",
+    "蔚来", "小鹏", "理想", "比亚迪", "宁德时代",
+    "蚂蚁金服", "网商银行", "众安保险",
+    "携程", "去哪儿", "飞猪", "马蜂窝",
+    "小红书", "知乎", "豆瓣", "陌陌", "探探",
+    "SHEIN", "安克创新", "致欧科技", "泽宝", "帕拓逊",
+    "米哈游", "莉莉丝", "叠纸", "鹰角网络", "完美世界", "西山居", "37互娱",
+    "腾讯音乐", "网易云音乐", "喜马拉雅", "荔枝", "蜻蜓FM",
+    " Keep", "薄荷健康", "平安好医生", "丁香园", "微医",
+    "顺丰", "中通", "韵达", "圆通", "申通", "极兔",
+    # 金融
+    "中国银行", "工商银行", "建设银行", "农业银行", "交通银行", "招商银行", "民生银行",
+    "平安银行", "浦发银行", "广发银行", "兴业银行", "中信银行",
+    "中国人寿", "中国平安", "太平洋保险", "新华保险", "泰康保险",
+    "蚂蚁基金", "天天基金", "雪球", "富途", "老虎证券",
+    # 外资
+    "Google", "Meta", "Apple", "Amazon", "Microsoft", "Netflix", "Tesla",
+    "Goldman Sachs", "Morgan Stanley", "JP Morgan", "Citi", "UBS", "Deutsche Bank",
+    "Boeing", "Airbnb", "Uber", "Lyft", "Stripe", "Square", "Shopify",
+    # 快消/零售
+    "宝洁", "联合利华", "欧莱雅", "雅诗兰黛", "兰蔻", "资生堂", "可口可乐", "百事可乐",
+    "雀巢", "玛氏", "亿滋", "卡夫", "达能", "蒙牛", "伊利", "光明",
+    "优衣库", "Zara", "H&M", "Gap", "Nike", "Adidas", "Puma",
+    "华润", "中粮", "中化", "中国石化", "中国石油",
+    # 汽车
+    "特斯拉", "蔚来汽车", "小鹏汽车", "理想汽车", "比亚迪", "吉利", "长城", "长安",
+    "上汽", "广汽", "一汽", "东风", "北汽",
+    # 医疗健康
+    "恒瑞医药", "百济神州", "信达生物", "君实生物", "再鼎医药",
+    "迈瑞医疗", "联影医疗", "鱼跃医疗", "九安医疗",
+    "京东健康", "阿里健康", "平安好医生",
+}
+
+# 常见城市
+SUPPORTED_CITIES = {"北京", "上海", "深圳", "广州", "杭州", "成都", "武汉", "南京", "苏州", "西安", "重庆", "天津", "长沙", "郑州", "东莞", "佛山", "厦门", "福州", "济南", "青岛", "大连", "沈阳", "哈尔滨", "长春", "昆明", "贵阳", "南宁", "石家庄", "太原", "合肥", "南昌"}
+
+
 # ---------------------- Data Models ----------------------
 
 @dataclass
@@ -257,43 +302,64 @@ class NiuKeWangParser(BaseParser):
 
 
 class XiaohongshuParser(BaseParser):
-    """小红书解析器 - 从帖子提取招聘相关信息并通过WebSearch验证"""
+    """小红书解析器 - 通过 WebSearch 验证招聘线索
+
+    小红书有 IP 风控无法直接爬取，此解析器用于从 WebSearch 结果中
+    提取并验证小红书上提到的招聘线索。
+    """
 
     def __init__(self):
         super().__init__("xiaohongshu")
 
-    def parse(self, page) -> List[JobListing]:
-        """小红书是SPA，需要Playwright渲染"""
+    def parse(self, content: str) -> List[JobListing]:
+        """从文本内容（WebSearch结果）中提取招聘线索"""
         jobs = []
 
-        # 小红书页面结构
-        job_data = page.evaluate("""
-            () => {
-                const results = [];
+        if not content:
+            return jobs
 
-                // 查找笔记内容区域
-                const content = document.querySelector('#detailPage') ||
-                               document.querySelector('.note-detail') ||
-                               document.querySelector('[class*="content"]');
+        # 匹配模式：公司名 + 职位关键词
+        # 例如："字节跳动招聘实习生" "华为内推"
+        patterns = [
+            r'([\u4e00-\u9fa5A-Za-z]{2,15})(?:公司)?(?:招聘|内推|直聘|实习|校招|春招|秋招)([\u4e00-\u9fa5A-Za-z]{2,20}?)(?:实习|生|工)?',
+            r'(?:【)([\u4e00-\u9fa5A-Za-z]{2,10})(?:】)(.*?)(?:招聘|实习)',
+        ]
 
-                if (content) {
-                    const text = content.innerText;
-                    results.push({ content: text.substring(0, 5000) });
-                }
+        for pattern in patterns:
+            matches = re.findall(pattern, content)
+            for match in matches:
+                company = match[0].strip()
+                title = match[1].strip() if len(match) > 1 else ""
 
-                return results;
-            }
-        """)
-
-        for item in job_data:
-            content = item.get('content', '')
-            # 从内容中提取可能的职位信息
-            # 这需要后续的 web search 验证
+                if company and title and len(title) > 2:
+                    job = JobListing(
+                        source=self.name,
+                        company=company,
+                        title=title,
+                        city=""
+                    )
+                    jobs.append(job)
 
         return jobs
 
     def validate(self, job: JobListing) -> bool:
+        if self.check_excluded_keywords(job.title + job.company):
+            return False
+        if len(job.title) < 3:
+            return False
+        # 小红书来源需要大厂验证
+        if not self._is_large_company(job.company):
+            return False
         return True
+
+    def _is_large_company(self, company_name: str) -> bool:
+        """检查是否为大规模公司"""
+        if not company_name:
+            return False
+        for large in KNOWN_LARGE_COMPANIES:
+            if large in company_name or company_name in large:
+                return True
+        return False
 
 
 class OfferShowParser(BaseParser):
@@ -398,7 +464,8 @@ class JobScraper:
         self.parsers = {
             "shixiseng": ShiXiShengParser(),
             "niukewang": NiuKeWangParser(),
-            "offershow": OfferShowParser()
+            "offershow": OfferShowParser(),
+            "xiaohongshu": XiaohongshuParser()
         }
         self.load_config(config_path)
         self.results: List[JobListing] = []
@@ -494,10 +561,20 @@ class JobScraper:
 
         return valid_jobs
 
-    def run(self, sources: List[str] = None) -> List[JobListing]:
-        """运行爬虫"""
+    def run(self, sources: List[str] = None, city: str = None, verify_size: bool = True) -> List[JobListing]:
+        """运行爬虫
+
+        Args:
+            sources: 指定来源列表
+            city: 城市过滤（如 "深圳"、"上海"）
+            verify_size: 是否验证公司规模
+        """
         print("=" * 60)
         print("🚀 多源招聘信息爬虫启动")
+        if city:
+            print(f"📍 城市过滤: {city}")
+        if verify_size:
+            print("🏢 公司规模过滤: 500+ 人")
         print("=" * 60)
 
         all_jobs = []
@@ -518,10 +595,34 @@ class JobScraper:
                 seen.add(job.hash_id)
                 unique_jobs.append(job)
 
-        print(f"\n✅ 总计获取 {len(unique_jobs)} 条去重后职位")
+        # 城市过滤
+        if city:
+            city_filter = city.strip()
+            unique_jobs = [j for j in unique_jobs if city_filter in j.city]
+            print(f"\n🏙️ 城市过滤后: {len(unique_jobs)} 条")
+
+        # 公司规模过滤
+        if verify_size:
+            size_before = len(unique_jobs)
+            unique_jobs = [j for j in unique_jobs if self.is_large_company(j.company)]
+            print(f"🏢 大厂过滤后: {len(unique_jobs)} 条 (过滤 {size_before - len(unique_jobs)} 条)")
+
+        print(f"\n✅ 最终获取 {len(unique_jobs)} 条高质量职位")
 
         self.results = unique_jobs
         return unique_jobs
+
+    def is_large_company(self, company_name: str) -> bool:
+        """检查是否为大规模公司（500+ 人）"""
+        if not company_name:
+            return False
+
+        # 检查是否在已知大厂名单中
+        for large_company in KNOWN_LARGE_COMPANIES:
+            if large_company in company_name or company_name in large_company:
+                return True
+
+        return False
 
     def export(self, format: str = "json", filepath: str = None):
         """导出结果"""
@@ -564,9 +665,15 @@ if __name__ == "__main__":
     parser.add_argument("--config", default="skill.json", help="配置文件路径")
     parser.add_argument("--output", default="jobs.json", help="输出文件")
     parser.add_argument("--format", default="json", choices=["json", "csv"], help="输出格式")
+    parser.add_argument("--city", type=str, help="城市过滤（如：深圳、上海、北京）")
+    parser.add_argument("--no-verify-size", action="store_true", help="跳过公司规模验证")
 
     args = parser.parse_args()
 
     scraper = JobScraper(config_path=args.config)
-    scraper.run(sources=args.sources)
+    scraper.run(
+        sources=args.sources,
+        city=args.city,
+        verify_size=not args.no_verify_size
+    )
     scraper.export(format=args.format, filepath=args.output)

@@ -1,6 +1,6 @@
 {
   "name": "job-scraper",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "多源招聘信息爬虫 - 从 OfferShow、实习僧、牛客网 等平台抓取招聘数据",
   "author": "Traineemage",
   "homepage": "https://github.com/Traineemage/job-scraper",
@@ -17,7 +17,9 @@
       "帮我找实习",
       "招聘爬虫",
       "job scraper",
-      "招聘信息"
+      "招聘信息",
+      "job-{city}",
+      "offer多多多"
     ]
   },
 
@@ -56,6 +58,15 @@
       "stability": "high",
       "requires": "playwright",
       "note": "校招+实习信息"
+    },
+    {
+      "name": "xiaohongshu",
+      "display": "小红书",
+      "url": null,
+      "priority": 4,
+      "stability": "low",
+      "requires": "websearch",
+      "note": "通过 WebSearch 验证招聘线索，需大厂验证"
     }
   ],
 
@@ -65,14 +76,14 @@
       "args": [],
       "env": {}
     },
-    "scrape-offershow": {
-      "description": "只抓取 OfferShow",
-      "args": ["--sources", "offershow"],
+    "scrape-city": {
+      "description": "抓取指定城市招聘信息",
+      "args": ["--city", "{city}"],
       "env": {}
     },
     "scrape-quality": {
-      "description": "抓取并验证公司规模",
-      "args": ["--verify-company-size"],
+      "description": "抓取并验证公司规模（500+人）",
+      "args": [],
       "env": {}
     }
   }

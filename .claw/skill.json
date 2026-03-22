@@ -1,24 +1,35 @@
 {
   "name": "job-scraper",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "多源招聘信息爬虫 - 从 OfferShow、实习僧、牛客网 等平台抓取招聘数据",
   "author": "Traineemage",
   "homepage": "https://github.com/Traineemage/job-scraper",
   "requires": ["playwright"],
+  "triggers": {
+    "cases": [
+      "job-{city}",
+      "帮我抓取招聘信息",
+      "最新的实习信息",
+      "校招信息有哪些",
+      "offer多多多"
+    ]
+  },
   "commands": {
     "scrape": {
-      "description": "抓取 OfferShow 招聘信息",
-      "args": ["--sources", "offershow"],
-      "env": {}
-    },
-    "scrape-all": {
       "description": "抓取所有来源",
       "args": [],
+      "env": {}
+    },
+    "scrape-city": {
+      "description": "抓取指定城市 (job-深圳)",
+      "args": ["--city", "{city}"],
       "env": {}
     }
   },
   "config": {
     "filters": {
+      "company_size_min": 500,
+      "post_after": "2026-03-01",
       "exclude_keywords": ["中介", "代理", "押金", "培训费", "贷款", "传销"],
       "min_salary_daily": 50
     }

@@ -58,6 +58,12 @@ KNOWN_LARGE_COMPANIES = {
 # 常见城市
 SUPPORTED_CITIES = {"北京", "上海", "深圳", "广州", "杭州", "成都", "武汉", "南京", "苏州", "西安", "重庆", "天津", "长沙", "郑州", "东莞", "佛山", "厦门", "福州", "济南", "青岛", "大连", "沈阳", "哈尔滨", "长春", "昆明", "贵阳", "南宁", "石家庄", "太原", "合肥", "南昌"}
 
+# ---------------------- 时间过滤配置 ----------------------
+# 发布于这些时间之后的招聘信息才会被保留
+# 格式：datetime(年, 月, 日, 时, 分, 秒)
+
+POST_AFTER = datetime(2026, 3, 1, 0, 0, 0)  # 2026年3月1日起
+
 
 # ---------------------- Data Models ----------------------
 
@@ -76,6 +82,7 @@ class JobListing:
     requirements: str = ""
     url: str = ""
     posted_time: Optional[str] = None
+    posted_timestamp: Optional[int] = None  # Unix timestamp，用于时间过滤
     hash_id: str = ""  # 用于去重
 
     def __post_init__(self):
@@ -86,6 +93,49 @@ class JobListing:
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+
+def parse_posted_time(time_str: str) -> Optional[int]:
+    """解析发布时间字符串，返回 Unix timestamp
+
+    支持格式：
+    - "2026-03-19"
+    - "2026.03.19"
+    - "2026-03-19 发布"
+    - "3天前"
+    - "1周前"
+    """
+    if not time_str:
+        return None
+
+    # 清理字符串
+    time_str = time_str.strip()
+    time_str = re.sub(r'发布|前$', '', time_str).strip()
+
+    # 尝试解析日期格式
+    for fmt in ["%Y.%m.%d", "%Y-%m-%d", "%Y/%m/%d"]:
+        try:
+            dt = datetime.strptime(time_str[:10], fmt)
+            return int(dt.timestamp())
+        except ValueError:
+            continue
+
+    # 解析相对时间
+    if "天" in time_str:
+        try:
+            days = int(re.search(r'(\d+)', time_str).group(1))
+            return int((datetime.now() - timedelta(days=days)).timestamp())
+        except:
+            pass
+
+    if "周" in time_str:
+        try:
+            weeks = int(re.search(r'(\d+)', time_str).group(1))
+            return int((datetime.now() - timedelta(weeks=weeks)).timestamp())
+        except:
+            pass
+
+    return None
 
 
 # ---------------------- Base Parser ----------------------
@@ -424,6 +474,7 @@ class OfferShowParser(BaseParser):
         for item in data:
             company = item.get('company', '').strip()
             title = item.get('title', '').strip()
+            posted_str = item.get('posted', '')
 
             # 从职位标题中提取公司名（如果没有单独的公司名）
             if not company and title:
@@ -433,12 +484,14 @@ class OfferShowParser(BaseParser):
                     company = company_match.group(1)
 
             if title and len(title) > 4:
+                posted_formatted = posted_str.replace('.', '-') if posted_str else None
                 job = JobListing(
                     source=self.name,
                     company=company,
                     title=title,
                     city="",
-                    posted_time=item.get('posted', '').replace('.', '-') if item.get('posted') else None
+                    posted_time=posted_formatted,
+                    posted_timestamp=parse_posted_time(posted_str)
                 )
                 jobs.append(job)
 
@@ -606,6 +659,12 @@ class JobScraper:
             size_before = len(unique_jobs)
             unique_jobs = [j for j in unique_jobs if self.is_large_company(j.company)]
             print(f"🏢 大厂过滤后: {len(unique_jobs)} 条 (过滤 {size_before - len(unique_jobs)} 条)")
+
+        # 时间过滤：只保留 POST_AFTER 之后发布的职位
+        time_before = len(unique_jobs)
+        post_after_ts = int(POST_AFTER.timestamp())
+        unique_jobs = [j for j in unique_jobs if j.posted_timestamp and j.posted_timestamp >= post_after_ts]
+        print(f"⏰ 时间过滤后: {len(unique_jobs)} 条 (过滤 {time_before - len(unique_jobs)} 条，保留 {POST_AFTER.strftime('%Y.%m.%d')} 之后)")
 
         print(f"\n✅ 最终获取 {len(unique_jobs)} 条高质量职位")
 

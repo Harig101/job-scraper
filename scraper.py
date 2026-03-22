@@ -101,49 +101,87 @@ class BaseParser(ABC):
 # ---------------------- 具体 Parser 实现 ----------------------
 
 class ShiXiShengParser(BaseParser):
-    """实习僧解析器"""
+    """实习僧解析器 - 使用Playwright动态渲染"""
 
     def __init__(self):
         super().__init__("shixiseng")
 
-    def parse(self, html: str) -> List[JobListing]:
+    def parse(self, page) -> List[JobListing]:
+        """实习僧是SPA，需要Playwright渲染后提取"""
         jobs = []
 
-        # 实习僧的职位数据在页面 JSON 中或通过 API 加载
-        # 这里用正则匹配关键信息
-        job_blocks = re.findall(
-            r'<div[^>]*class="[^"]*job[^"]*"[^>]*>(.*?)</div>',
-            html, re.DOTALL | re.IGNORECASE
-        )
+        # 从页面提取结构化数据
+        job_data = page.evaluate("""
+            () => {
+                const results = [];
+                const items = document.querySelectorAll('.intern-wrap.interns-point.intern-item');
 
-        for block in job_blocks:
-            try:
-                company = re.search(r'company[^>]*>([^<]+)', block)
-                title = re.search(r'<h3[^>]*>([^<]+)', block)
-                city = re.search(r'city[^>]*>([^<]+)', block)
-                salary = re.search(r'salary[^>]*>([^<]+)', block)
-                time_elem = re.search(r'time[^>]*>([^<]+)', block)
+                items.forEach((item) => {
+                    // 从DOM元素中提取数据
+                    const titleEl = item.querySelector('.intern-detail__job .title');
+                    const companyEl = item.querySelector('.intern-detail__company .title');
+                    const cityEl = item.querySelector('.city');
+                    const salaryEl = item.querySelector('.day');
+                    const linkEl = item.querySelector('a.title');
 
-                if company and title:
-                    job = JobListing(
-                        source=self.name,
-                        company=company.group(1).strip(),
-                        title=title.group(1).strip(),
-                        city=city.group(1).strip() if city else "",
-                        salary=salary.group(1).strip() if salary else None,
-                        posted_time=time_elem.group(1).strip() if time_elem else None
-                    )
-                    job.salary_min, job.salary_max = self.normalize_salary(job.salary or "")
-                    jobs.append(job)
-            except Exception:
-                continue
+                    const title = titleEl?.getAttribute('title') || titleEl?.innerText?.trim() || '';
+                    const company = companyEl?.getAttribute('title') || companyEl?.innerText?.trim() || '';
+                    const city = cityEl?.getAttribute('title') || cityEl?.innerText?.trim() || '';
+                    const salary = salaryEl?.getAttribute('title') || salaryEl?.innerText?.trim() || '';
+                    const link = linkEl?.href || '';
+
+                    if (title) {
+                        results.push({ title, company, city, salary, link });
+                    }
+                });
+
+                return results;
+            }
+        """)
+
+        for item in job_data:
+            # 清理 icon font 产生的乱码
+            title = self.clean_text(item.get('title', ''))
+            company = self.clean_text(item.get('company', ''))
+            city = self.clean_text(item.get('city', ''))
+            salary = self.clean_text(item.get('salary', ''))
+
+            if title:
+                job = JobListing(
+                    source=self.name,
+                    company=company,
+                    title=title,
+                    city=city,
+                    salary=salary if salary and '面议' not in salary else None,
+                    url=item.get('link', '')
+                )
+                job.salary_min, job.salary_max = self.normalize_salary(salary)
+                jobs.append(job)
 
         return jobs
+
+    def clean_text(self, text: str) -> str:
+        """清理 icon font 产生的乱码"""
+        if not text:
+            return ''
+        import html
+        # 先解码 HTML 实体
+        text = html.unescape(text)
+        # 移除 Private Use Area (icon fonts)
+        text = re.sub(r'[\ue000-\uf8ff]', '', text)
+        # 移除残留的 HTML 实体
+        text = re.sub(r'&#[xX][0-9a-fA-F]+;', '', text)
+        text = re.sub(r'&#[0-9]+;', '', text)
+        # 移除多余空白
+        text = re.sub(r'\s+', ' ', text)
+        return text.strip()
 
     def validate(self, job: JobListing) -> bool:
         if self.check_excluded_keywords(job.title + job.company):
             return False
-        if job.salary_min and job.salary_min < 50:  # 日薪低于50可能不真实
+        if job.salary_min and job.salary_min < 50:
+            return False
+        if len(job.title) < 3:
             return False
         return True
 
@@ -154,40 +192,107 @@ class NiuKeWangParser(BaseParser):
     def __init__(self):
         super().__init__("niukewang")
 
-    def parse(self, html: str) -> List[JobListing]:
+    def parse(self, page) -> List[JobListing]:
+        """牛客网职位列表页"""
         jobs = []
 
-        # 牛客网职位列表结构
-        job_items = re.findall(
-            r'<a[^>]*class="[^"]*job[^"]*"[^>]*>(.*?)</a>',
-            html, re.DOTALL | re.IGNORECASE
-        )
+        job_data = page.evaluate("""
+            () => {
+                const results = [];
 
-        for item in job_items:
-            try:
-                company = re.search(r'company[^>]*>([^<]+)', item)
-                title = re.search(r'<h[34][^>]*>([^<]+)', item)
-                city = re.search(r'location[^>]*>([^<]+)', item)
-                salary = re.search(r'salary[^>]*>([^<]+)', item)
+                // 尝试多种选择器
+                const selectors = [
+                    '.job-list .job-item',
+                    '.job-item',
+                    '[class*="job-item"]',
+                    '[class*="job-card"]'
+                ];
 
-                if company and title:
-                    job = JobListing(
-                        source=self.name,
-                        company=company.group(1).strip(),
-                        title=title.group(1).strip(),
-                        city=city.group(1).strip() if city else "",
-                        salary=salary.group(1).strip() if salary else None
-                    )
-                    job.salary_min, job.salary_max = self.normalize_salary(job.salary or "")
-                    jobs.append(job)
-            except Exception:
-                continue
+                let items = [];
+                selectors.forEach(sel => {
+                    items = items.concat(Array.from(document.querySelectorAll(sel)));
+                });
+
+                // 去重
+                const seen = new Set();
+                items = items.filter(item => {
+                    if (seen.has(item)) return false;
+                    seen.add(item);
+                    return true;
+                });
+
+                items.forEach(item => {
+                    const title = item.querySelector('h3, h4, .title, [class*="title"]')?.innerText?.trim() || '';
+                    const company = item.querySelector('[class*="company"]')?.innerText?.trim() || '';
+                    const city = item.querySelector('[class*="city"], [class*="location"]')?.innerText?.trim() || '';
+                    const salary = item.querySelector('[class*="salary"]')?.innerText?.trim() || '';
+
+                    if (title || company) {
+                        results.push({ title, company, city, salary });
+                    }
+                });
+
+                return results;
+            }
+        """)
+
+        for item in job_data:
+            if item.get('title'):
+                job = JobListing(
+                    source=self.name,
+                    company=item.get('company', ''),
+                    title=item.get('title', ''),
+                    city=item.get('city', ''),
+                    salary=item.get('salary') or None
+                )
+                job.salary_min, job.salary_max = self.normalize_salary(item.get('salary', ''))
+                jobs.append(job)
 
         return jobs
 
     def validate(self, job: JobListing) -> bool:
         if self.check_excluded_keywords(job.title + job.company):
             return False
+        return True
+
+
+class XiaohongshuParser(BaseParser):
+    """小红书解析器 - 从帖子提取招聘相关信息并通过WebSearch验证"""
+
+    def __init__(self):
+        super().__init__("xiaohongshu")
+
+    def parse(self, page) -> List[JobListing]:
+        """小红书是SPA，需要Playwright渲染"""
+        jobs = []
+
+        # 小红书页面结构
+        job_data = page.evaluate("""
+            () => {
+                const results = [];
+
+                // 查找笔记内容区域
+                const content = document.querySelector('#detailPage') ||
+                               document.querySelector('.note-detail') ||
+                               document.querySelector('[class*="content"]');
+
+                if (content) {
+                    const text = content.innerText;
+                    results.push({ content: text.substring(0, 5000) });
+                }
+
+                return results;
+            }
+        """)
+
+        for item in job_data:
+            content = item.get('content', '')
+            # 从内容中提取可能的职位信息
+            # 这需要后续的 web search 验证
+
+        return jobs
+
+    def validate(self, job: JobListing) -> bool:
         return True
 
 
@@ -342,25 +447,33 @@ class JobScraper:
             print(f"❌ 未知来源: {source_name}")
             return []
 
-        if use_playwright or source_name == "offershow":
+        # SPA sources need Playwright
+        spa_sources = ("offershow", "shixiseng", "niukewang")
+
+        if use_playwright or source_name in spa_sources:
             try:
                 from playwright.sync_api import sync_playwright
 
                 with sync_playwright() as p:
                     browser = p.chromium.launch(headless=True)
                     page = browser.new_page(viewport={"width": 1280, "height": 900})
-                    page.goto(url, wait_until="networkidle", timeout=90000)
-                    page.wait_for_timeout(5000)
 
-                    # For OfferShow, pass page to parser while browser is still open
-                    if source_name == "offershow":
+                    # Use domcontentloaded for sites that might timeout with networkidle
+                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                    page.wait_for_timeout(8000)  # Wait for JS rendering
+
+                    # SPA sources need page object, others use HTML
+                    if source_name in spa_sources:
                         jobs = parser.parse(page)
                     else:
                         html = page.content()
 
                     browser.close()
-            except ImportError:
-                print("⚠️ Playwright 未安装，使用 HTTP 请求")
+            except ImportError as e:
+                print(f"⚠️ Playwright 未安装: {e}")
+                html = self.fetch_url(url)
+            except Exception as e:
+                print(f"⚠️ Playwright 错误: {e}")
                 html = self.fetch_url(url)
         else:
             html = self.fetch_url(url)
@@ -393,7 +506,7 @@ class JobScraper:
             if sources and source["name"] not in sources:
                 continue
 
-            use_playwright = source["name"] == "offershow"
+            use_playwright = source["name"] in ("offershow", "shixiseng", "niukewang")
             jobs = self.scrape_source(source, use_playwright=use_playwright)
             all_jobs.extend(jobs)
 

@@ -1,7 +1,34 @@
 {
-  "name": "job_scraper",
-  "version": "1.0.0",
-  "description": "多源招聘信息爬虫框架 - 从实习僧、牛客网、offershow.cn 等平台抓取招聘数据",
+  "name": "job-scraper",
+  "version": "1.1.0",
+  "description": "多源招聘信息爬虫 - 从 OfferShow、实习僧、牛客网 等平台抓取招聘数据",
+  "author": "Traineemage",
+  "homepage": "https://github.com/Traineemage/job-scraper",
+  "requires": ["playwright"],
+
+  "triggers": {
+    "description": "触发条件 - 当用户询问以下内容时激活此 skill",
+    "cases": [
+      "帮我抓取招聘信息",
+      "爬取招聘网站",
+      "最新的实习信息",
+      "校招信息有哪些",
+      "有哪些公司在招人",
+      "帮我找实习",
+      "招聘爬虫",
+      "job scraper",
+      "招聘信息"
+    ]
+  },
+
+  "filters": {
+    "company_size_min": 500,
+    "exclude_keywords": ["中介", "代理", "押金", "培训费", "贷款", "传销", "先交钱"],
+    "min_salary_daily": 50,
+    "min_title_length": 4,
+    "require_authentic_source": true
+  },
+
   "sources": [
     {
       "name": "offershow",
@@ -10,7 +37,7 @@
       "priority": 1,
       "stability": "medium",
       "requires": "playwright",
-      "note": "SPA站点，需要Playwright渲染才能获取数据"
+      "note": "校招/实习信息，知名企业内推"
     },
     {
       "name": "shixiseng",
@@ -18,7 +45,8 @@
       "url": "https://www.shixiseng.com/interns",
       "priority": 2,
       "stability": "high",
-      "note": "主力实习信息源"
+      "requires": "playwright",
+      "note": "主力实习信息源，需验证公司规模"
     },
     {
       "name": "niukewang",
@@ -26,22 +54,26 @@
       "url": "https://www.nowcoder.com/job/exp",
       "priority": 3,
       "stability": "high",
+      "requires": "playwright",
       "note": "校招+实习信息"
     }
   ],
-  "filters": {
-    "exclude_keywords": ["中介", "代理", "押金", "培训费", "贷款", "传销", "先交钱"],
-    "min_salary_daily": 50,
-    "min_title_length": 6
-  },
-  "output": {
-    "format": "json",
-    "dedup_by": ["company", "title", "city"],
-    "sort_by": "posted_time"
-  },
+
   "commands": {
-    "scrape_all": "python3 scraper.py",
-    "scrape_offershow": "python3 scraper.py --sources offershow",
-    "scrape_with_export": "python3 scraper.py --format csv --output jobs.csv"
+    "scrape": {
+      "description": "抓取所有来源的招聘信息",
+      "args": [],
+      "env": {}
+    },
+    "scrape-offershow": {
+      "description": "只抓取 OfferShow",
+      "args": ["--sources", "offershow"],
+      "env": {}
+    },
+    "scrape-quality": {
+      "description": "抓取并验证公司规模",
+      "args": ["--verify-company-size"],
+      "env": {}
+    }
   }
 }

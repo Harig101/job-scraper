@@ -1,0 +1,60 @@
+name: job_scraper
+version: "1.0"
+description: 多源招聘信息爬虫 - 从实习僧、牛客网、offershow.cn 等平台抓取招聘数据
+
+sources:
+  - name: offershow
+    display: OfferShow
+    url: https://www.offershow.cn/
+    priority: 1
+    stability: medium
+    requires: playwright
+    note: SPA站点，需要Playwright渲染才能获取数据
+
+  - name: shixiseng
+    display: 实习僧
+    url: https://www.shixiseng.com/interns
+    priority: 2
+    stability: high
+    note: 主力实习信息源
+
+  - name: niukewang
+    display: 牛客网
+    url: https://www.nowcoder.com/job/exp
+    priority: 3
+    stability: high
+    note: 校招+实习信息
+
+filters:
+  exclude_keywords:
+    - 中介
+    - 代理
+    - 押金
+    - 培训费
+    - 贷款
+    - 传销
+    - 先交钱
+
+  min_salary_daily: 50
+  min_title_length: 6
+
+output:
+  format: json
+  dedup_by:
+    - company
+    - title
+    - city
+  sort_by: posted_time
+
+commands:
+  scrape_all:
+    description: 抓取所有来源
+    cmd: python3 scraper.py
+
+  scrape_offershow:
+    description: 只抓取OfferShow
+    cmd: python3 scraper.py --sources offershow
+
+  scrape_with_export:
+    description: 抓取并导出CSV
+    cmd: python3 scraper.py --format csv --output jobs.csv

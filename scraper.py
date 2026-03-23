@@ -30,29 +30,94 @@ KNOWN_LARGE_COMPANIES = {
     "SHEIN", "安克创新", "致欧科技", "泽宝", "帕拓逊",
     "米哈游", "莉莉丝", "叠纸", "鹰角网络", "完美世界", "西山居", "37互娱",
     "腾讯音乐", "网易云音乐", "喜马拉雅", "荔枝", "蜻蜓FM",
-    " Keep", "薄荷健康", "平安好医生", "丁香园", "微医",
+    "Keep", "薄荷健康", "平安好医生", "丁香园", "微医",
     "顺丰", "中通", "韵达", "圆通", "申通", "极兔",
+    "爱奇艺", "B站", "UC", "优酷", "土豆", "搜狐", "新浪", "凤凰网",
+    "汽车之家", "易车", "懂车帝", "瓜子二手车", "人人车", "优信",
+    "猎聘", "BOSS直聘", "拉勾网", "前程无忧", "智联招聘",
+    "饿了么", "美团外卖", "大众点评", "口碑", "淘票票", "猫眼",
+    "58同城", "赶集网", "百姓网", "安居客", "贝壳找房",
+    "蜜芽", "孩子王", "宝宝树", "妈妈网",
+    "大麦网", "永辉超市", "盒马", "叮咚买菜", "每日优鲜",
     # 金融
     "中国银行", "工商银行", "建设银行", "农业银行", "交通银行", "招商银行", "民生银行",
-    "平安银行", "浦发银行", "广发银行", "兴业银行", "中信银行",
-    "中国人寿", "中国平安", "太平洋保险", "新华保险", "泰康保险",
-    "蚂蚁基金", "天天基金", "雪球", "富途", "老虎证券",
+    "平安银行", "浦发银行", "广发银行", "兴业银行", "中信银行", "光大银行", "华夏银行",
+    "中国人寿", "中国平安", "太平洋保险", "新华保险", "泰康保险", "人保财险", "大地保险",
+    "蚂蚁基金", "天天基金", "雪球", "富途", "老虎证券", "同花顺", "东方财富",
+    "中金公司", "中信建投", "国泰君安", "华泰证券", "招商证券", "海通证券", "广发证券",
+    "中国石化", "中国石油", "中国建筑", "中国中铁", "中国铁建", "中国中车",
     # 外资
     "Google", "Meta", "Apple", "Amazon", "Microsoft", "Netflix", "Tesla",
-    "Goldman Sachs", "Morgan Stanley", "JP Morgan", "Citi", "UBS", "Deutsche Bank",
-    "Boeing", "Airbnb", "Uber", "Lyft", "Stripe", "Square", "Shopify",
+    "Goldman Sachs", "Morgan Stanley", "JP Morgan", "Citi", "UBS", "Deutsche Bank", "HSBC",
+    "Boeing", "Airbnb", "Uber", "Lyft", "Stripe", "Square", "Shopify", "PayPal",
+    "Intel", "AMD", "Nvidia", "Qualcomm", "Broadcom", "Texas Instruments",
+    "Samsung", "Sony", "LG", "Panasonic", "Hitachi",
+    "Shell", "BP", "ExxonMobil", "Chevron",
+    "Coca-Cola", "PepsiCo", "Nestle", "Unilever", "P&G", "L'Oréal", "Estée Lauder",
+    "BMW", "Mercedes-Benz", "Audi", "Volkswagen", "Toyota", "Honda", "Ford", "GM",
+    "McDonald's", "KFC", "Pizza Hut", "Starbucks", "Costa Coffee",
+    "IKEA", "H&M", "Zara", "Gap", "Nike", "Adidas", "Uniqlo",
+    "Pfizer", "Johnson & Johnson", "Merck", "Roche", "Novartis", "Sanofi", "Bayer",
     # 快消/零售
-    "宝洁", "联合利华", "欧莱雅", "雅诗兰黛", "兰蔻", "资生堂", "可口可乐", "百事可乐",
-    "雀巢", "玛氏", "亿滋", "卡夫", "达能", "蒙牛", "伊利", "光明",
-    "优衣库", "Zara", "H&M", "Gap", "Nike", "Adidas", "Puma",
-    "华润", "中粮", "中化", "中国石化", "中国石油",
+    "宝洁", "联合利华", "欧莱雅", "雅诗兰黛", "兰蔻", "资生堂", "SK-II", "Olay",
+    "可口可乐", "百事可乐", "农夫山泉", "怡口", "娃哈哈", "蒙牛", "伊利", "光明", "飞鹤",
+    "雀巢", "玛氏", "亿滋", "卡夫", "达能", "养元", "王老吉", "加多宝",
+    "茅台", "五粮液", "洋河", "泸州老窖", "汾酒", "古井贡酒",
+    "华润", "中粮", "中化", "中储粮", "中糖",
+    "永辉超市", "大润发", "华润万家", "家乐福", "沃尔玛", "麦德龙", "山姆会员店",
+    "京东", "天猫", "淘宝", "拼多多", "唯品会", "考拉海购", "聚美优品",
+    "国美", "苏宁", "五星电器", "迪信通", "顺电", "苏宁易购",
     # 汽车
-    "特斯拉", "蔚来汽车", "小鹏汽车", "理想汽车", "比亚迪", "吉利", "长城", "长安",
-    "上汽", "广汽", "一汽", "东风", "北汽",
+    "特斯拉", "比亚迪", "吉利", "长城", "长安", "上汽", "广汽", "一汽", "东风", "北汽",
+    "蔚来汽车", "小鹏汽车", "理想汽车", "哪吒汽车", "零跑汽车", "威马汽车",
+    "宁德时代", "亿纬锂能", "国轩高科", "中创新航", "蜂巢能源",
+    "潍柴动力", "玉柴", "锡柴", "重汽", "陕汽", "北奔重卡",
+    "米其林", "固特异", "普利司通", "倍耐力", "韩泰", "佳通",
+    "博世", "大陆", "采埃孚", "麦格纳", "爱信", "格特拉克",
     # 医疗健康
-    "恒瑞医药", "百济神州", "信达生物", "君实生物", "再鼎医药",
-    "迈瑞医疗", "联影医疗", "鱼跃医疗", "九安医疗",
-    "京东健康", "阿里健康", "平安好医生",
+    "恒瑞医药", "百济神州", "信达生物", "君实生物", "再鼎医药", "荣昌生物",
+    "迈瑞医疗", "联影医疗", "鱼跃医疗", "九安医疗", "乐普医疗", "微创医疗",
+    "京东健康", "阿里健康", "平安好医生", "丁香园", "微医", "好大夫",
+    "药明康德", "药明生物", "康龙化成", "昭衍新药", "美迪西",
+    "爱尔眼科", "通策医疗", "爱康国宾", "美年健康", "瑞尔齿科",
+    "云南白药", "片仔癀", "东阿阿胶", "同仁堂", "九芝堂", "马应龙",
+    "修正药业", "扬子江药业", "复星医药", "上海医药", "九州药业",
+    "GSK", "Pfizer", "Johnson & Johnson", "Roche", "Novartis", "Sanofi", "Bayer", "AstraZeneca", "MSD",
+    # 工业/制造
+    "中国商飞", "中国中车", "中航工业", "航天科技", "航天科工", "中船重工",
+    "三一重工", "中联重科", "徐工机械", "柳工机械", "临工机械", "龙工控股",
+    "振华重工", "华滋", "润邦股份",
+    "海螺水泥", "华新水泥", "冀东水泥", "山水水泥", "天瑞水泥",
+    "宝武钢铁", "河钢集团", "沙钢集团", "鞍钢集团", "首钢集团",
+    "中国铝业", "中国建材", "海螺型材", "北新建材",
+    "特变电工", "阳光电源", "隆基绿能", "通威股份", "天合光能", "晶澳科技",
+    "宁德时代", "亿纬锂能", "国轩高科", "孚能科技", "欣旺达", "鹏辉能源",
+    "国电南瑞", "许继电气", "平高电气", "思源电气", "特变电工",
+    # 房地产/建筑
+    "万科集团", "碧桂园", "恒大集团", "融创中国", "中国海外", "华润置地",
+    "龙湖集团", "金地集团", "绿地集团", "保利发展", "招商蛇口", "华夏幸福",
+    "新城控股", "中南建设", "金科股份", "阳光城", "旭辉集团",
+    "中国建筑", "中国中铁", "中国铁建", "中国交建", "中国电建", "中国能建",
+    "中国化学", "中国核建", "中冶集团", "上海建工", "北京建工",
+    # 教育
+    "好未来", "新东方", "学而思", "猿辅导", "作业帮", "高途", "一起教育",
+    "VIPKID", "哒哒英语", "兰迪少儿英语", "VIPKID", "51Talk",
+    "中公教育", "华图教育", "粉笔教育", "导氮教育",
+    "中银集团", "中汇", "瑞思学科", "英孚教育", "华尔街英语",
+    "智慧树", "学习通", "雨课堂", "classIn", "腾讯课堂", "网易云课堂",
+    # 其他知名
+    "万科物业", "碧桂园服务", "龙湖物业", "融创服务", "华润万象生活",
+    "顺丰速运", "京东物流", "菜鸟网络", "极兔速递", "京东快递",
+    "中国邮政", "EMS", "顺丰同城", "闪送", "达达",
+    # 人力资源/猎头
+    "科锐国际", "米高蒲志", "Michael Page", "Adecco", "Manpower", "Randstad",
+    # 基金
+    "国海富兰克林基金", "汇添富基金", "易方达基金", "南方基金", "华夏基金", "嘉实基金", "博时基金", "富国基金", "工银基金", "建信基金",
+    "滴滴出行", "嘀嗒出行", "首汽约车", "T3出行", "曹操出行", "美团打车",
+    "哈啰出行", "青桔单车", "美团单车", "摩拜单车",
+    "猫眼", "淘票票", "时光网", "万达电影", "横店影视", "金逸影视",
+    "Keep", "咕咚", "小米运动", "华为运动", "Fitbit",
+    "小天才", "步步高", "读书郎", "优学派", "科大讯飞学习机",
 }
 
 # 常见城市
@@ -215,17 +280,49 @@ class ShiXiShengParser(BaseParser):
                     // 从DOM元素中提取数据
                     const titleEl = item.querySelector('.intern-detail__job .title');
                     const companyEl = item.querySelector('.intern-detail__company .title');
-                    const cityEl = item.querySelector('.city');
-                    const salaryEl = item.querySelector('.day');
                     const linkEl = item.querySelector('a.title');
 
-                    const title = titleEl?.getAttribute('title') || titleEl?.innerText?.trim() || '';
+                    // 优先使用 title 属性（正常文本），其次 innerText
+                    let title = titleEl?.getAttribute('title') || '';
+                    // 如果 title 属性是乱码，用 innerText
+                    if (!title || /[\ue000-\uf8ff]/.test(title)) {
+                        const href = linkEl?.href || '';
+                        title = titleEl?.innerText?.replace(/[\ue000-\uf8ff]/g, '')?.trim() || '';
+                    }
                     const company = companyEl?.getAttribute('title') || companyEl?.innerText?.trim() || '';
-                    const city = cityEl?.getAttribute('title') || cityEl?.innerText?.trim() || '';
-                    const salary = salaryEl?.getAttribute('title') || salaryEl?.innerText?.trim() || '';
                     const link = linkEl?.href || '';
 
-                    if (title) {
+                    // 从完整文本中提取城市（格式：城市 | 天/周 | X个月）
+                    const fullText = item.innerText || '';
+                    const lines = fullText.split('\\n').filter(l => l.trim());
+                    let city = '';
+
+                    // 查找包含 "城市 |" 格式的行
+                    const cityPattern = /^([^\|]+)\s*\|/;
+                    for (const line of lines) {
+                        const match = line.match(cityPattern);
+                        if (match && match[1]) {
+                            const potentialCity = match[1].trim();
+                            // 验证是否是已知的城市名
+                            const knownCities = ['北京', '上海', '深圳', '广州', '杭州', '成都', '武汉', '南京', '苏州', '西安', '重庆', '天津', '长沙', '郑州', '东莞', '佛山', '厦门', '福州', '济南', '青岛', '大连', '沈阳', '哈尔滨', '长春', '昆明', '贵阳', '南宁', '石家庄', '太原', '合肥', '南昌'];
+                            if (knownCities.some(c => potentialCity.includes(c))) {
+                                city = potentialCity;
+                                break;
+                            }
+                        }
+                    }
+
+                    // 提取薪资（格式：数字-数字/天 或 面议）
+                    let salary = '';
+                    for (const line of lines) {
+                        if (line.includes('/天') || line.includes('面议')) {
+                            // 清理 icon font
+                            salary = line.replace(/[\ue000-\uf8ff]/g, '').trim();
+                            break;
+                        }
+                    }
+
+                    if (title || company) {
                         results.push({ title, company, city, salary, link });
                     }
                 });
@@ -235,7 +332,7 @@ class ShiXiShengParser(BaseParser):
         """)
 
         for item in job_data:
-            # 清理 icon font 产生的乱码
+            # 清理 icon font 和 HTML 实体
             title = self.clean_text(item.get('title', ''))
             company = self.clean_text(item.get('company', ''))
             city = self.clean_text(item.get('city', ''))
@@ -661,10 +758,15 @@ class JobScraper:
             print(f"🏢 大厂过滤后: {len(unique_jobs)} 条 (过滤 {size_before - len(unique_jobs)} 条)")
 
         # 时间过滤：只保留 POST_AFTER 之后发布的职位
+        # 没有时间戳的职位保留（假设是最近的）
         time_before = len(unique_jobs)
         post_after_ts = int(POST_AFTER.timestamp())
-        unique_jobs = [j for j in unique_jobs if j.posted_timestamp and j.posted_timestamp >= post_after_ts]
-        print(f"⏰ 时间过滤后: {len(unique_jobs)} 条 (过滤 {time_before - len(unique_jobs)} 条，保留 {POST_AFTER.strftime('%Y.%m.%d')} 之后)")
+        unique_jobs = [j for j in unique_jobs if j.posted_timestamp is None or j.posted_timestamp >= post_after_ts]
+        filtered_count = time_before - len(unique_jobs)
+        if filtered_count > 0:
+            print(f"⏰ 时间过滤后: {len(unique_jobs)} 条 (过滤 {filtered_count} 条，保留 {POST_AFTER.strftime('%Y.%m.%d')} 之后)")
+        else:
+            print(f"⏰ 时间过滤后: {len(unique_jobs)} 条 (无时间戳假设为最新)")
 
         print(f"\n✅ 最终获取 {len(unique_jobs)} 条高质量职位")
 

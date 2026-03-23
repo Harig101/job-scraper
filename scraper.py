@@ -568,6 +568,9 @@ class OfferShowParser(BaseParser):
             }
         """)
 
+        # OfferShow 城市列表（用于从公司名中提取城市）
+        KNOWN_CITIES = ['北京', '上海', '深圳', '广州', '杭州', '成都', '武汉', '南京', '西安', '苏州', '天津', '重庆', '长沙', '郑州', '东莞', '佛山', '宁波', '青岛', '济南', '大连', '哈尔滨', '长春', '沈阳', '石家庄', '福州', '厦门', '南昌', '合肥', '昆明', '贵阳', '乌鲁木齐', '兰州', '太原', '海口', '呼和浩特', '拉萨', '银川', '西宁', '无锡', '常州', '徐州', '南通', '温州', '泉州', '珠海', '中山', '惠州', '江门', '湛江', '汕头', '莆田', '漳州', '龙岩', '三明', '南平', '宁德', '茂名', '肇庆', '韶关', '桂林', '柳州', '梧州', '北海', '钦州', '贵港', '玉林', '百色', '贺州', '河池', '来宾', '崇左']
+
         for item in data:
             company = item.get('company', '').strip()
             title = item.get('title', '').strip()
@@ -575,10 +578,17 @@ class OfferShowParser(BaseParser):
 
             # 从职位标题中提取公司名（如果没有单独的公司名）
             if not company and title:
-                # 尝试从标题中提取公司名 (通常在前面)
                 company_match = re.match(r'^([A-Za-z\u4e00-\u9fa5]{2,10})', title)
                 if company_match:
                     company = company_match.group(1)
+
+            # 尝试从公司名中提取城市（如"深圳市xxx" -> "深圳"）
+            city = ""
+            if company:
+                for c in KNOWN_CITIES:
+                    if company.startswith(c) or company[:4].endswith(c):
+                        city = c
+                        break
 
             if title and len(title) > 4:
                 posted_formatted = posted_str.replace('.', '-') if posted_str else None
@@ -586,7 +596,7 @@ class OfferShowParser(BaseParser):
                     source=self.name,
                     company=company,
                     title=title,
-                    city="",
+                    city=city,
                     posted_time=posted_formatted,
                     posted_timestamp=parse_posted_time(posted_str)
                 )
@@ -745,11 +755,19 @@ class JobScraper:
                 seen.add(job.hash_id)
                 unique_jobs.append(job)
 
-        # 城市过滤
+        # 城市过滤：区分平台是否提供 city
+        # - 平台提供 city：空 city 按不匹配处理（应被过滤）
+        # - 平台不提供 city（如 OfferShow）：空 city 保留（未知数据）
+        SOURCES_WITHOUT_CITY = {"offershow", "xiaohongshu"}
         if city:
             city_filter = city.strip()
-            unique_jobs = [j for j in unique_jobs if city_filter in j.city]
-            print(f"\n🏙️ 城市过滤后: {len(unique_jobs)} 条")
+            before = len(unique_jobs)
+            matched = [j for j in unique_jobs if j.city and city_filter in j.city]
+            unknown_city = [j for j in unique_jobs if not j.city and j.source in SOURCES_WITHOUT_CITY]
+            unique_jobs = matched + unknown_city
+            filtered = before - len(unique_jobs)
+            unknown_count = len(unknown_city)
+            print(f"\n🏙️ 城市过滤后: {len(unique_jobs)} 条 (匹配 {len(matched)} 条，未知城市保留 {unknown_count} 条)")
 
         # 公司规模过滤
         if verify_size:

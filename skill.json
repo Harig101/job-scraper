@@ -1,10 +1,16 @@
 {
   "name": "job-scraper",
-  "version": "1.2.0",
+  "version": "1.6.0",
   "description": "多源招聘信息爬虫 - 从 OfferShow、实习僧、牛客网 等平台抓取招聘数据",
   "author": "Traineemage",
-  "homepage": "https://github.com/Traineemage/job-scraper",
-  "requires": ["playwright"],
+  "homepage": "https://github.com/Harig101/job-scraper",
+  "requires": ["playwright", "browser-use", "agent-browser"],
+
+  "browser_config": {
+    "type": "agent-browser",
+    "chromium_path": "local",
+    "note": "OpenClaw 配置了 browser-use + agent-browser，scraper.py 会使用本地 Chromium 自动化"
+  },
 
   "triggers": {
     "description": "触发条件 - 当用户询问以下内容时激活此 skill",
@@ -40,7 +46,7 @@
       "priority": 1,
       "stability": "medium",
       "requires": "playwright",
-      "note": "校招/实习信息，知名企业内推"
+      "note": "校招/实习信息，知名企业内推，城市字段需从公司名提取"
     },
     {
       "name": "shixiseng",
@@ -49,7 +55,7 @@
       "priority": 2,
       "stability": "high",
       "requires": "playwright",
-      "note": "主力实习信息源，需验证公司规模"
+      "note": "主力实习信息源，需验证公司规模，城市提取正常"
     },
     {
       "name": "niukewang",
@@ -58,16 +64,7 @@
       "priority": 3,
       "stability": "high",
       "requires": "playwright",
-      "note": "校招+实习信息"
-    },
-    {
-      "name": "xiaohongshu",
-      "display": "小红书",
-      "url": null,
-      "priority": 4,
-      "stability": "low",
-      "requires": "websearch",
-      "note": "通过 WebSearch 验证招聘线索，需大厂验证"
+      "note": "校招+实习信息，需登录 Cookie（已保存在 /tmp/nowcoder_cookies.json）"
     }
   ],
 

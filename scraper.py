@@ -238,7 +238,10 @@ class BaseParser(ABC):
             match = re.search(pattern, salary_str)
             if match:
                 min_val = int(match.group(1))
-                max_val = int(match.group(2))
+                if match.lastindex and match.lastindex >= 2:
+                    max_val = int(match.group(2))
+                else:
+                    max_val = min_val  # 单值薪资
 
                 if '/天' in salary_str:
                     min_val *= 21  # 转换为月薪
@@ -392,17 +395,22 @@ class NiuKeWangParser(BaseParser):
             () => {
                 const results = [];
 
-                // 尝试多种选择器
+                // 牛客网校园招聘页面选择器
                 const selectors = [
                     '.job-list .job-item',
                     '.job-item',
                     '[class*="job-item"]',
-                    '[class*="job-card"]'
+                    '[class*="job-card"]',
+                    '.recruit-list .recruit-item',
+                    '[class*="recruit-item"]'
                 ];
 
                 let items = [];
                 selectors.forEach(sel => {
-                    items = items.concat(Array.from(document.querySelectorAll(sel)));
+                    const found = document.querySelectorAll(sel);
+                    if (found.length > 0) {
+                        items = items.concat(Array.from(found));
+                    }
                 });
 
                 // 去重
@@ -414,10 +422,59 @@ class NiuKeWangParser(BaseParser):
                 });
 
                 items.forEach(item => {
-                    const title = item.querySelector('h3, h4, .title, [class*="title"]')?.innerText?.trim() || '';
-                    const company = item.querySelector('[class*="company"]')?.innerText?.trim() || '';
-                    const city = item.querySelector('[class*="city"], [class*="location"]')?.innerText?.trim() || '';
-                    const salary = item.querySelector('[class*="salary"]')?.innerText?.trim() || '';
+                    const text = item.innerText || '';
+                    const lines = text.split('\\n').map(l => l.trim()).filter(l => l);
+
+                    let title = '', company = '', city = '', salary = '';
+                    const knownCities = ['北京', '上海', '深圳', '广州', '杭州', '成都', '武汉', '南京', '西安', '苏州', '天津', '重庆', '长沙', '郑州', '东莞', '佛山', '宁波', '青岛', '济南', '大连', '哈尔滨', '长春', '沈阳', '石家庄', '福州', '厦门', '南昌', '合肥', '昆明', '贵阳'];
+                    const companyKeywords = ['有限', '集团', '科技', '公司', '银行', '基金', '保险', '证券', '投资', '资本', '控股', '股份'];
+                    const statusKeywords = ['毕业', 'HR', '薪资', '面议', '投', '反馈', '收藏', '在线', '处理', '稳定', '不错', '很好', '高薪', '直达', '专属', '内推', '类职', '同专', '指数', '榜', '今日', '刚', '日', '周', '收藏', '处理', '反馈', '稳定', '氛围', '体验', '超过', '同类'];
+
+                    // 标题：第一行，去掉城市后缀（-城市）
+                    const firstLine = lines[0] || '';
+                    const titleParts = firstLine.split('-');
+                    if (titleParts.length >= 2 && knownCities.includes(titleParts[titleParts.length - 1].trim())) {
+                        title = titleParts.slice(0, -1).join('-').trim();
+                    } else {
+                        title = firstLine;
+                    }
+
+                    // 遍历所有行提取：公司、薪资、城市
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i];
+
+                        // 薪资：包含K或面议
+                        if (!salary && (line.includes('K') || line.includes('面议'))) {
+                            salary = line;
+                        }
+
+                        // 城市：单个已知城市
+                        if (!city && knownCities.some(c => line === c)) {
+                            city = line;
+                        }
+
+                        // 公司名：包含公司关键词的直接是公司
+                        if (!company && companyKeywords.some(k => line.includes(k))) {
+                            company = line;
+                        }
+                    }
+
+                    // 如果还没找到公司，尝试用位置推断
+                    // 公司通常在教育要求行之后，industry行之前
+                    if (!company) {
+                        for (let i = 1; i < lines.length; i++) {
+                            const line = lines[i];
+                            // 如果这一行不包含状态关键词，且后面有行业/规模信息
+                            if (!statusKeywords.some(k => line.includes(k)) && line.length >= 2 && line.length <= 15) {
+                                // 检查后面是否有规模信息（包含"人"）
+                                const hasSizeAfter = lines.slice(i + 1, i + 3).some(l => l.includes('人') && l.match(/^\d+/));
+                                if (hasSizeAfter) {
+                                    company = line;
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
                     if (title || company) {
                         results.push({ title, company, city, salary });

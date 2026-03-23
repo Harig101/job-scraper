@@ -20,7 +20,7 @@ sources:
 
   - name: niukewang
     display: 牛客网
-    url: https://www.nowcoder.com/job/exp
+    url: https://www.nowcoder.com/jobs/school/jobs
     priority: 3
     stability: high
     note: 校招+实习信息

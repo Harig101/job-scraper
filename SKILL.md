@@ -1,50 +1,49 @@
 # Job Scraper Skill (OpenClaw Compatible)
 
 ## 概述
+
 多源招聘信息爬虫，从多个平台抓取真实招聘信息，过滤低质量条目。
 
-## 使用方式
-```
-python3 scraper.py --sources shixiseng niukewang offershow --output jobs.json
-```
+## 快速使用
 
-## 来源配置
+```bash
+# 抓取所有来源
+python3 scraper.py
 
-| 来源 | 优先级 | 稳定性 | 说明 |
-|------|--------|--------|------|
-| shixiseng | 1 | 高 | 实习僧，主招实习生 |
-| niukewang | 2 | 高 | 牛客网，校招/实习 |
-| offershow | 3 | 中 | OfferShow，需Playwright |
-
-## 过滤规则
-
-### 必排关键词
-- 中介、代理、押金、培训费、贷款、传销、先交钱
-
-### 薪资过滤
-- 日薪低于 50 元视为可疑
-
-### 去重维度
-- 公司 + 职位名称 + 城市
-
-## 输出格式
-```json
-{
-  "source": "shixiseng",
-  "company": "字节跳动",
-  "title": "后端研发实习生",
-  "city": "北京",
-  "salary": "400-600/天",
-  "salary_min": 8400,
-  "salary_max": 12600,
-  "job_type": "实习",
-  "deadline": "2026-04-01",
-  "posted_time": "2026-03-20",
-  "hash_id": "a1b2c3d4e5f6"
-}
+# 多城市 + 职位类型 + 薪资过滤
+python3 scraper.py --cities 深圳 上海 --job-type 实习 --salary-min 200
 ```
 
-## OpenClaw 调用示例
-```
+## 核心过滤规则
+
+| 规则 | 说明 |
+|------|------|
+| 公司规模 | 500+ 人（已知大厂名单） |
+| 薪资下限 | 日薪 ≥ 150 元 |
+| 去重维度 | 公司 + 职位 + 城市 |
+| 时间过滤 | 2026-03-01 之后 |
+
+详细规则见 `references/filters.md`
+
+## OpenClaw 调用
+
+```bash
 claw run job_scraper --sources shixiseng --format json
+claw run job_scraper --cities 深圳 --job-type 实习
+```
+
+## 目录结构（渐进式披露）
+
+```
+job_scraper/
+├── SKILL.md              ← Level 2：核心概念（本文档）
+├── references/
+│   ├── filters.md        ← Level 3：过滤链路与规则详解
+│   ├── sources.md        ← Level 3：各平台解析逻辑与选择器
+│   ├── output.md         ← Level 3：输出格式与飞书同步
+│   └── time-salary.md    ← Level 3：时间解析与薪资标准化
+├── examples/
+│   └── run_examples.sh    ← 常用命令示例
+└── scripts/
+    └── validate.py        ← jobs.json 数据校验工具
 ```

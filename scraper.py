@@ -392,7 +392,7 @@ class ShiXiShengParser(BaseParser):
     def validate(self, job: JobListing) -> bool:
         if self.check_excluded_keywords(job.title + job.company):
             return False
-        if job.salary_min and job.salary_min < 50:
+        if job.salary_min and job.salary_min < 150:
             return False
         if len(job.title) < 3:
             return False

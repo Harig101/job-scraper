@@ -1,6 +1,6 @@
 {
   "name": "job-scraper",
-  "version": "1.7.0",
+  "version": "2.0.0",
   "description": "多源招聘信息爬虫 - 从 OfferShow、实习僧、牛客网 等平台抓取招聘数据",
   "author": "Traineemage",
   "homepage": "https://github.com/Harig101/job-scraper",
@@ -33,7 +33,7 @@
     "company_size_min": 500,
     "post_after": "2026-03-01",
     "exclude_keywords": ["中介", "代理", "押金", "培训费", "贷款", "传销", "先交钱"],
-    "min_salary_daily": 50,
+    "min_salary_daily": 150,
     "min_title_length": 4,
     "require_authentic_source": true
   },

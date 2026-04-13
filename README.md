@@ -1,11 +1,14 @@
 # job-scraper
 
-多源招聘信息爬虫 - 从 OfferShow、实习僧、牛客网 等平台抓取真实招聘信息
+多源招聘信息爬虫 v2.0.0 - 从 OfferShow、实习僧、牛客网 等平台抓取真实招聘信息
 
 ## 功能特性
 
 - 支持多个招聘平台（OfferShow、实习僧、牛客网、小红书）
-- **城市过滤**：`job-{city}` 格式触发，自动筛选指定城市
+- **多城市过滤**：`--cities` 支持多城市 OR 匹配
+- **职位类型过滤**：`--job-type` 支持实习/校招/社招
+- **薪资下限过滤**：`--salary-min` 日薪过滤
+- **时间范围过滤**：`--posted-within-days` 最近 N 天职位
 - **公司规模过滤**：优先大厂（500+ 人公司）
 - 自动过滤虚假招聘（押金、培训费等诈骗关键词）
 - 自动去重（公司 + 职位 + 城市）
@@ -18,79 +21,81 @@ pip install playwright
 playwright install chromium
 ```
 
-## 使用方法
-
-### 命令行
+## 命令行使用
 
 ```bash
-# 抓取所有来源
+# 基础抓取
 python3 scraper.py
 
-# 抓取指定城市（触发 job-{city} 模式）
-python3 scraper.py --city 深圳
-python3 scraper.py --city 上海
-python3 scraper.py --city 北京
+# 多城市过滤
+python3 scraper.py --cities 深圳 上海 北京
+
+# 职位类型 + 薪资过滤
+python3 scraper.py --cities 深圳 --job-type 实习 --salary-min 150
+
+# 最近 7 天内的职位
+python3 scraper.py --cities 深圳 --posted-within-days 7
+
+# 组合使用
+python3 scraper.py --cities 深圳 上海 --job-type 实习 --salary-min 200 --posted-within-days 3
 
 # 抓取单个来源
 python3 scraper.py --sources offershow
 python3 scraper.py --sources shixiseng
 
-# 跳过公司规模验证（获取所有公司）
+# 跳过公司规模验证
 python3 scraper.py --no-verify-size
 
-# 导出 CSV
+# 导出格式
+python3 scraper.py --format json --output jobs.json
 python3 scraper.py --format csv --output jobs.csv
 ```
 
-### OpenClaw
+## OpenClaw
 
 ```
 claw run job-scraper.scrape
-claw run job-scraper.scrape-city --city 北京
+claw run job-scraper.scrape-city --cities 深圳
+claw run job-scraper.scrape-city --cities 深圳 上海 --job-type 实习
 ```
 
-## 触发条件
+## 过滤规则
 
-当用户询问以下内容时自动激活：
-
-- "帮我抓取招聘信息"
-- "爬取招聘网站"
-- "最新的实习信息"
-- "校招信息有哪些"
-- "job-深圳"
-- "job-上海"
-- "offer多多多"
-- ...
-
-## 输出格式
-
-```json
-{
-  "source": "shixiseng",
-  "company": "字节跳动",
-  "title": "后端研发实习生",
-  "city": "深圳",
-  "salary": "400-600/天",
-  "url": "https://..."
-}
-```
+| 过滤项 | 默认行为 | 参数 |
+|--------|---------|------|
+| 公司规模 | 只保留 500+ 人 | `--no-verify-size` 跳过 |
+| 薪资下限 | 日薪 ≥ 150 元 | `--salary-min` |
+| 去重 | 公司 + 职位 + 城市 | — |
+| 时间过滤 | 2026-03-01 之后 | `--posted-within-days` |
+| 城市 | 全部保留 | `--cities` |
+| 职位类型 | 全部保留 | `--job-type` |
+| 排除关键词 | 中介/代理/押金/培训费等 | 硬编码 |
 
 ## 支持平台
 
 | 平台 | 状态 | 说明 |
 |------|------|------|
-| OfferShow | ✅ 已完成 | SPA，需要 Playwright，校招/实习 |
-| 实习僧 | ✅ 已完成 | SPA，需要 Playwright，实习信息 |
-| 牛客网 | ✅ 已完成 | SPA，需要 Playwright |
-| 小红书 | ✅ 已完成 | WebSearch 验证，需大厂认证 |
+| OfferShow | ✅ | SPA，需要 Playwright，城市从公司名提取 |
+| 实习僧 | ✅ | SPA，需要 Playwright，城市字段正常 |
+| 牛客网 | ✅ | SPA，需要 Playwright，需要登录 Cookie |
+| 小红书 | ✅ | WebSearch 验证，需大厂认证 |
 
-## 过滤规则
+## 目录结构（渐进式披露）
 
-- **城市过滤**：通过 `--city` 参数指定
-- **公司规模**：500+ 人大厂（已知大厂名单）
-- 排除关键词：中介、代理、押金、培训费、贷款、传销
-- 日薪低于 50 元视为可疑
-- 按公司+职位+城市去重
+```
+job_scraper/
+├── SKILL.md              ← Level 2：核心概念
+├── references/
+│   ├── filters.md        ← Level 3：过滤链路详解
+│   ├── sources.md        ← Level 3：平台解析逻辑与选择器
+│   ├── output.md         ← Level 3：输出格式与飞书同步
+│   └── time-salary.md    ← Level 3：时间解析与薪资标准化
+├── examples/
+│   └── run_examples.sh    ← 常用命令示例
+├── scripts/
+│   └── validate.py        ← 数据校验工具
+└── scraper.py             ← 主程序
+```
 
 ## License
 

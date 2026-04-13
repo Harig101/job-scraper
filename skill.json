@@ -1,6 +1,6 @@
 {
   "name": "job-scraper",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "多源招聘信息爬虫 - 从 OfferShow、实习僧、牛客网 等平台抓取招聘数据",
   "author": "Traineemage",
   "homepage": "https://github.com/Harig101/job-scraper",
@@ -22,8 +22,8 @@
       "有哪些公司在招人",
       "帮我找实习",
       "招聘爬虫",
-      "job scraper",
       "招聘信息",
+      "job scraper",
       "job-{city}",
       "offer多多多"
     ]
@@ -36,6 +36,24 @@
     "min_salary_daily": 50,
     "min_title_length": 4,
     "require_authentic_source": true
+  },
+
+  "cities": {
+    "description": "支持的城市列表",
+    "all": ["北京", "上海", "深圳", "广州", "杭州", "成都", "武汉", "南京", "苏州",
+            "西安", "重庆", "天津", "长沙", "郑州", "东莞", "佛山", "厦门", "福州",
+            "济南", "青岛", "大连", "沈阳", "哈尔滨", "长春", "昆明", "贵阳", "南宁",
+            "石家庄", "太原", "合肥", "南昌", "宁波", "无锡", "珠海", "中山", "惠州",
+            "常州", "徐州", "温州", "嘉兴", "金华", "泉州", "烟台", "潍坊", "临沂",
+            "洛阳", "唐山", "保定", "邯郸", "海口", "三亚", "兰州", "银川",
+            "西宁", "乌鲁木齐", "拉萨", "呼和浩特", "昆山", "江门", "肇庆", "汕头",
+            "漳州", "柳州", "遵义", "绵阳", "泸州"]
+  },
+
+  "job_types": {
+    "实习": ["实习"],
+    "校招": ["校招", "春招", "秋招", "应届", "校园招聘"],
+    "社招": ["社招", "社会招聘", "全职"]
   },
 
   "sources": [
@@ -75,14 +93,26 @@
       "env": {}
     },
     "scrape-city": {
-      "description": "抓取指定城市招聘信息",
-      "args": ["--city", "{city}"],
-      "env": {}
+      "description": "抓取指定城市招聘信息（支持多城市）",
+      "args": ["--cities", "{cities}"],
+      "env": {},
+      "examples": [
+        "python3 scraper.py --cities 深圳 上海",
+        "python3 scraper.py --cities 北京 广州 深圳 --job-type 实习 --salary-min 200"
+      ]
     },
     "scrape-quality": {
       "description": "抓取并验证公司规模（500+人）",
       "args": [],
       "env": {}
+    },
+    "scrape-recent": {
+      "description": "抓取最近 N 天内的招聘信息",
+      "args": ["--posted-within-days", "{days}"],
+      "examples": [
+        "python3 scraper.py --posted-within-days 7",
+        "python3 scraper.py --cities 深圳 --job-type 实习 --posted-within-days 3"
+      ]
     }
   }
 }

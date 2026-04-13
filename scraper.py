@@ -121,7 +121,16 @@ KNOWN_LARGE_COMPANIES = {
 }
 
 # 常见城市
-SUPPORTED_CITIES = {"北京", "上海", "深圳", "广州", "杭州", "成都", "武汉", "南京", "苏州", "西安", "重庆", "天津", "长沙", "郑州", "东莞", "佛山", "厦门", "福州", "济南", "青岛", "大连", "沈阳", "哈尔滨", "长春", "昆明", "贵阳", "南宁", "石家庄", "太原", "合肥", "南昌"}
+SUPPORTED_CITIES = {
+    "北京", "上海", "深圳", "广州", "杭州", "成都", "武汉", "南京", "苏州",
+    "西安", "重庆", "天津", "长沙", "郑州", "东莞", "佛山", "厦门", "福州",
+    "济南", "青岛", "大连", "沈阳", "哈尔滨", "长春", "昆明", "贵阳", "南宁",
+    "石家庄", "太原", "合肥", "南昌", "宁波", "无锡", "珠海", "中山", "惠州",
+    "常州", "徐州", "温州", "嘉兴", "金华", "泉州", "烟台", "潍坊", "临沂",
+    "洛阳", "唐山", "保定", "邯郸", "海口", "三亚", "兰州", "银川",
+    "西宁", "乌鲁木齐", "拉萨", "呼和浩特", "昆山", "江门", "肇庆", "汕头",
+    "漳州", "柳州", "遵义", "绵阳", "泸州"
+}
 
 # ---------------------- 时间过滤配置 ----------------------
 # 发布于这些时间之后的招聘信息才会被保留
@@ -184,6 +193,15 @@ def parse_posted_time(time_str: str) -> Optional[int]:
             return int(dt.timestamp())
         except ValueError:
             continue
+
+    # ✅ 新增：支持中文日期格式 "2026年03月09日"
+    try:
+        m = re.match(r'(\d{4})年(\d{2})月(\d{2})日', time_str)
+        if m:
+            dt = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            return int(dt.timestamp())
+    except:
+        pass
 
     # 解析相对时间
     if "天" in time_str:
@@ -778,18 +796,28 @@ class JobScraper:
 
         return valid_jobs
 
-    def run(self, sources: List[str] = None, city: str = None, verify_size: bool = True) -> List[JobListing]:
+    def run(self, sources: List[str] = None, cities: List[str] = None, job_type: str = None,
+            salary_min: int = None, posted_within_days: int = None, verify_size: bool = True) -> List[JobListing]:
         """运行爬虫
 
         Args:
             sources: 指定来源列表
-            city: 城市过滤（如 "深圳"、"上海"）
+            cities: 城市过滤列表（如 ["深圳", "上海"]），支持多城市
+            job_type: 职位类型过滤（实习/校招/社招）
+            salary_min: 最低日薪过滤
+            posted_within_days: 只保留最近 N 天内发布的职位
             verify_size: 是否验证公司规模
         """
         print("=" * 60)
         print("🚀 多源招聘信息爬虫启动")
-        if city:
-            print(f"📍 城市过滤: {city}")
+        if cities:
+            print(f"📍 城市过滤: {', '.join(cities)}")
+        if job_type:
+            print(f"💼 职位类型过滤: {job_type}")
+        if salary_min:
+            print(f"💰 最低日薪: {salary_min}元/天")
+        if posted_within_days:
+            print(f"⏰ 只保留最近 {posted_within_days} 天发布的职位")
         if verify_size:
             print("🏢 公司规模过滤: 500+ 人")
         print("=" * 60)
@@ -816,15 +844,48 @@ class JobScraper:
         # - 平台提供 city：空 city 按不匹配处理（应被过滤）
         # - 平台不提供 city（如 OfferShow）：空 city 保留（未知数据）
         SOURCES_WITHOUT_CITY = {"offershow", "xiaohongshu"}
-        if city:
-            city_filter = city.strip()
+        if cities:
             before = len(unique_jobs)
-            matched = [j for j in unique_jobs if j.city and city_filter in j.city]
+            city_filters = [c.strip() for c in cities]
+            matched = [j for j in unique_jobs if j.city and any(cf in j.city for cf in city_filters)]
             unknown_city = [j for j in unique_jobs if not j.city and j.source in SOURCES_WITHOUT_CITY]
             unique_jobs = matched + unknown_city
             filtered = before - len(unique_jobs)
             unknown_count = len(unknown_city)
             print(f"\n🏙️ 城市过滤后: {len(unique_jobs)} 条 (匹配 {len(matched)} 条，未知城市保留 {unknown_count} 条)")
+
+        # 职位类型过滤
+        if job_type:
+            type_before = len(unique_jobs)
+            # job_type 支持模糊匹配：实习->实习, 校招->校招/春秋招, 社招->社招
+            type_keyword_map = {
+                "实习": ["实习"],
+                "校招": ["校招", "春招", "秋招", "应届", "校园招聘"],
+                "社招": ["社招", "社会招聘", "全职"]
+            }
+            keywords = type_keyword_map.get(job_type, [job_type])
+            unique_jobs = [j for j in unique_jobs if j.job_type and any(kw in j.job_type for kw in keywords)]
+            filtered_type = type_before - len(unique_jobs)
+            if filtered_type > 0:
+                print(f"💼 职位类型过滤后: {len(unique_jobs)} 条 (过滤 {filtered_type} 条)")
+
+        # 薪资过滤：日薪 >= salary_min
+        if salary_min is not None and salary_min > 0:
+            sal_before = len(unique_jobs)
+            unique_jobs = [j for j in unique_jobs if j.salary_min and j.salary_min >= salary_min]
+            filtered_sal = sal_before - len(unique_jobs)
+            if filtered_sal > 0:
+                print(f"💰 薪资过滤后: {len(unique_jobs)} 条 (过滤 {filtered_sal} 条，日薪<{salary_min}元)")
+
+        # 时间范围过滤：只保留最近 N 天内发布的职位
+        if posted_within_days is not None and posted_within_days > 0:
+            range_before = len(unique_jobs)
+            cutoff_ts = int((datetime.now() - timedelta(days=posted_within_days)).timestamp())
+            # 有时间戳的按时间戳过滤，无时间戳的假设为最新保留
+            unique_jobs = [j for j in unique_jobs if j.posted_timestamp is None or j.posted_timestamp >= cutoff_ts]
+            filtered_range = range_before - len(unique_jobs)
+            if filtered_range > 0:
+                print(f"⏰ 时间范围过滤后: {len(unique_jobs)} 条 (过滤 {filtered_range} 条，保留最近{posted_within_days}天)")
 
         # 公司规模过滤
         if verify_size:
@@ -901,7 +962,10 @@ if __name__ == "__main__":
     parser.add_argument("--config", default="skill.json", help="配置文件路径")
     parser.add_argument("--output", default="jobs.json", help="输出文件")
     parser.add_argument("--format", default="json", choices=["json", "csv"], help="输出格式")
-    parser.add_argument("--city", type=str, help="城市过滤（如：深圳、上海、北京）")
+    parser.add_argument("--cities", nargs="+", help="城市过滤，支持多城市（如：深圳 上海 北京）")
+    parser.add_argument("--job-type", type=str, choices=["实习", "校招", "社招"], help="职位类型过滤")
+    parser.add_argument("--salary-min", type=int, help="最低日薪过滤（如：200）")
+    parser.add_argument("--posted-within-days", type=int, help="只保留最近 N 天内发布的职位（如：7）")
     parser.add_argument("--no-verify-size", action="store_true", help="跳过公司规模验证")
 
     args = parser.parse_args()
@@ -909,7 +973,10 @@ if __name__ == "__main__":
     scraper = JobScraper(config_path=args.config)
     scraper.run(
         sources=args.sources,
-        city=args.city,
+        cities=args.cities,
+        job_type=args.job_type,
+        salary_min=args.salary_min,
+        posted_within_days=args.posted_within_days,
         verify_size=not args.no_verify_size
     )
     scraper.export(format=args.format, filepath=args.output)
